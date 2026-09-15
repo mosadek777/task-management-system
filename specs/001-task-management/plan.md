@@ -142,9 +142,17 @@ so the audit reports Article III as **PASS with one recorded exception**, not as
   constitution amendment.
 
 **Phase 9 audit note**: the auditor must confirm `TaskManagement.Api.csproj` contains
-*exactly* four PackageReference entries — `Swashbuckle.AspNetCore`,
-`Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Design`, and whatever
-the template itself adds. A fifth is a violation until justified here.
+*exactly* **three** PackageReference entries — `Swashbuckle.AspNetCore`,
+`Microsoft.EntityFrameworkCore.SqlServer` and `Microsoft.EntityFrameworkCore.Design`. A fourth is a
+violation until justified here.
+
+> **Updated 2026-09-15.** This note originally said *four*, allowing for
+> `Microsoft.AspNetCore.OpenApi` which the `dotnet new webapi` template adds. The Phase 9 audit
+> found that package unused — `Program.cs` was written against Swashbuckle, so the template's
+> `AddOpenApi()` / `MapOpenApi()` calls never existed — and it was removed at the owner's
+> instruction. Swagger UI still returns `200`, confirming it was never load-bearing.
+> `Microsoft.OpenApi.dll` remains in the build output as a *transitive* dependency of Swashbuckle,
+> which is expected and is not a declared reference.
 
 Everything else stays within the default rules: `Microsoft.EntityFrameworkCore.SqlServer` and
 `Microsoft.EntityFrameworkCore.Design` are required to run EF Core and its migration tooling, so

@@ -10,8 +10,9 @@
 
 # ✅ PASS — 8 of 8 articles
 
-No violations. Two **LOW advisories** (dead scaffolding), neither breaching any article. Both
-recorded below with a fix and left for the owner to decide, as Governance requires.
+No violations. Two **LOW advisories** (dead scaffolding) were raised, neither breaching any
+article; **both were subsequently applied at the owner's instruction and are now resolved.** See
+the Advisories section for what changed and how it was re-verified.
 
 | Article | Subject | Verdict |
 |---|---|---|
@@ -246,7 +247,12 @@ gitignored and absent from every commit.
 
 ---
 
-## Advisories — LOW, no article breached
+## Advisories — LOW, no article breached — ✅ BOTH RESOLVED 2026-09-15
+
+> **Both advisories were applied at the owner's instruction after this audit was first written.**
+> The original findings are preserved below for the record, each followed by what was done and how
+> it was verified. Re-verification after the changes: backend build clean, Angular build byte-for-byte
+> identical (`main-XX4AZRPP.js`), Swagger UI `200`, and the full gate **65 assertions, 0 failures**.
 
 ### Advisory 1 — `Microsoft.AspNetCore.OpenApi` is unused
 
@@ -265,6 +271,20 @@ cd C:\Users\moham\OneDrive\Desktop\project\backend\TaskManagement.Api
 dotnet remove package Microsoft.AspNetCore.OpenApi
 ```
 
+**✅ RESOLVED.** Package removed. `TaskManagement.Api.csproj` now declares **three**
+`PackageReference` entries: `Microsoft.EntityFrameworkCore.SqlServer`,
+`Microsoft.EntityFrameworkCore.Design`, `Swashbuckle.AspNetCore`.
+
+Verified: `dotnet build` succeeds with **0 warnings, 0 errors**, and the Swagger UI still returns
+`200` at `http://localhost:5178/swagger` — confirming Swashbuckle never depended on that package
+for the UI. (`Microsoft.OpenApi.dll` still ships in the output as a *transitive* dependency of
+Swashbuckle, which is correct and is not a declared reference.)
+
+**plan.md §4.1's audit note now reads one entry high.** It says to expect "exactly four
+PackageReference entries … and whatever the template itself adds". The template's addition has been
+removed, so the correct expectation is **three**. Future audits should check for three, and treat a
+fourth as requiring justification.
+
 ### Advisory 2 — test scaffolding with no tests
 
 `package.json` declares `"test": "ng test"` and `vitest` + `jsdom` are in `devDependencies`, and
@@ -278,6 +298,28 @@ default scaffolding in place.
 pass". Either remove `tsconfig.spec.json`, the `test` script and the two dev dependencies, or leave
 them deliberately for post-project work. **Owner's call** — Governance requires a FAIL to be fixed
 or waived, and this is not a FAIL, so nothing is blocked either way.
+
+**✅ RESOLVED.** Removed, in all **four** coupled places — removing fewer would have left the
+project in a worse state than before (e.g. an `ng test` target pointing at a deleted tsconfig):
+
+| # | File | Change |
+|---|---|---|
+| 1 | `angular.json` | dropped the `test` architect target (`@angular/build:unit-test`) |
+| 2 | `package.json` | dropped the `"test": "ng test"` script |
+| 3 | `package.json` | dropped the `vitest` and `jsdom` devDependencies |
+| 4 | `tsconfig.json` | dropped the `./tsconfig.spec.json` project reference |
+| 5 | `tsconfig.spec.json` | deleted |
+
+`npm install` then pruned **68 packages** from `node_modules` and updated `package-lock.json`.
+
+Verified: `npm run build` produces `main-XX4AZRPP.js` — **the identical bundle hash as before the
+change**, proving the application itself is untouched. The dev server starts and serves `200`.
+
+**Method note.** The first attempt rewrote these JSON files with PowerShell's `ConvertTo-Json`,
+which reformatted them entirely — a 141-line diff in `angular.json` to remove 3 lines, in a
+non-standard aligned-colon style the Angular tooling would have rewritten anyway. That was reverted
+and redone as surgical text edits. The final diff across all five files is **2 insertions, 26
+deletions**. A cleanup that produces a 250-line diff is not a cleanup.
 
 ---
 
