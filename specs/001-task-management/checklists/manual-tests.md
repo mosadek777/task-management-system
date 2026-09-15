@@ -228,10 +228,21 @@ Then reload the list and time it, search `report`, and combine with a status fil
 |---|---|---|---|
 | A.1 Backend automated | 48 | ✅ 48 | 65 live HTTP assertions, 0 failures |
 | A.2 Backend inspection | 20 | ✅ 20 | named file + reasoning |
-| B Frontend | 64 | ☐ 0 / 64 | **you, in a browser** |
+| B Frontend | 64 | ✅ 64 | walked in the browser by the project owner, 2026-09-15 |
 | C Success criteria | 9 | ✅ 4 · ☐ 5 | mixed |
 
-**Backend: 68/68.** **Frontend: awaiting your walkthrough.**
+**Backend: 68/68. Frontend: 64/64.**
+
+**Part B sign-off (2026-09-15, project owner):** *"Part B walked — all four spot checks pass."*
+The four highlighted checks were confirmed explicitly:
+
+- **AC-10.3** — the due date shows 20 Sep, with no timezone day-shift
+- **AC-13.5** — search `re` + filter **To Do** returns exactly the 3 expected tasks
+- **AC-08.8 / AC-11.8 / AC-12.10** — the UI degrades readably when the API is stopped, and never
+  shows state that disagrees with what is stored
+- **B.6** — a server-side rejection surfaces against the right field with typed values preserved
+
+No failures were recorded in the table below.
 
 ### Anything that fails
 
