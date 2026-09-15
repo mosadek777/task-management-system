@@ -1,0 +1,4 @@
+/* Tailwind v4 is CSS-first: this single import replaces the v3 @tailwind
+   directives and the tailwind.config.js file. Utility classes only — no
+   plugins, no component library (Article III bounds). */
+@import "tailwindcss";

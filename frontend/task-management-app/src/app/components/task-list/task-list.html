@@ -1,0 +1,154 @@
+<div class="space-y-4">
+  <!-- Header + new task -->
+  <div class="flex items-center justify-between gap-4">
+    <h1 class="text-xl font-semibold text-slate-900">Your tasks</h1>
+    <a
+      routerLink="/new"
+      class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+    >
+      + New task
+    </a>
+  </div>
+
+  <!-- [US-12] search + [US-13] filter: one toolbar, one request, they combine -->
+  <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:flex-row sm:items-center">
+    <div class="relative flex-1">
+      <input
+        type="search"
+        [formControl]="searchControl"
+        placeholder="Search by title…"
+        aria-label="Search tasks by title"
+        class="w-full rounded border border-slate-300 py-2 pr-20 pl-3 text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+      />
+      @if (searchControl.value) {
+        <button
+          type="button"
+          (click)="clearSearch()"
+          class="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+        >
+          Clear
+        </button>
+      }
+    </div>
+
+    <div class="flex flex-wrap gap-1" role="group" aria-label="Filter by status">
+      <button
+        type="button"
+        (click)="setStatusFilter('All')"
+        [class]="
+          statusFilter() === 'All'
+            ? 'rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white'
+            : 'rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50'
+        "
+      >
+        All
+      </button>
+      @for (s of statuses; track s) {
+        <button
+          type="button"
+          (click)="setStatusFilter(s)"
+          [class]="
+            statusFilter() === s
+              ? 'rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white'
+              : 'rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50'
+          "
+        >
+          {{ statusLabels[s] }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- AC-08.8 / AC-12.10: readable error, previous results stay visible -->
+  @if (error()) {
+    <div class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- AC-08.6: loading indication, not a blank screen that looks broken -->
+  @if (loading()) {
+    <div class="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+      Loading tasks…
+    </div>
+  } @else if (tasks().length === 0) {
+    <!-- Two distinct empty states: nothing at all vs nothing matched (AC-08.7, AC-12.5, AC-13.7) -->
+    <div class="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-12 text-center">
+      @if (isNarrowed) {
+        <p class="text-sm font-medium text-slate-700">No tasks match your filters</p>
+        <p class="mt-1 text-sm text-slate-500">
+          @if (searchControl.value?.trim()) {
+            Nothing with "{{ searchControl.value }}" in the title
+          }
+          @if (searchControl.value?.trim() && statusFilter() !== 'All') {
+            <span> and </span>
+          }
+          @if (statusFilter() !== 'All') {
+            <span>status {{ activeStatusLabel() }}</span>
+          }
+        </p>
+      } @else {
+        <p class="text-sm font-medium text-slate-700">No tasks yet</p>
+        <p class="mt-1 text-sm text-slate-500">Create your first task to get started.</p>
+        <a
+          routerLink="/new"
+          class="mt-4 inline-block rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        >
+          + New task
+        </a>
+      }
+    </div>
+  } @else {
+    <ul class="space-y-2">
+      @for (task of tasks(); track task.id) {
+        <li class="rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-300">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 flex-1">
+              <h2 class="font-medium break-words text-slate-900">{{ task.title }}</h2>
+
+              @if (task.description) {
+                <p class="mt-1 line-clamp-2 text-sm break-words text-slate-600">{{ task.description }}</p>
+              }
+
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span class="rounded px-2 py-0.5 font-medium ring-1 ring-inset" [class]="priorityClass(task)">
+                  {{ task.priority }}
+                </span>
+                <span class="rounded px-2 py-0.5 font-medium ring-1 ring-inset" [class]="statusClass(task)">
+                  {{ statusLabels[task.status] }}
+                </span>
+                <span class="text-slate-500">{{ formatDueDate(task.dueDate) }}</span>
+              </div>
+            </div>
+
+            <div class="flex shrink-0 gap-2">
+              <a
+                [routerLink]="['/edit', task.id]"
+                class="rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Edit
+              </a>
+              <button
+                type="button"
+                (click)="askDelete(task)"
+                class="rounded border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<!-- [US-11] nothing is sent until this is confirmed -->
+@if (taskPendingDelete(); as pending) {
+  <app-confirm-dialog
+    [taskTitle]="pending.title"
+    [busy]="deleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}

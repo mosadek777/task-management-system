@@ -1,0 +1,39 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="confirm-title"
+>
+  <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+    <h2 id="confirm-title" class="text-lg font-semibold text-slate-900">Delete this task?</h2>
+
+    <!-- AC-11.3: name the task being deleted -->
+    <p class="mt-3 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium break-words text-slate-800">
+      {{ taskTitle() }}
+    </p>
+
+    <!-- AC-11.4: state plainly that this cannot be undone -->
+    <p class="mt-3 text-sm text-red-700">
+      This is permanent. The task will be deleted for good and cannot be restored.
+    </p>
+
+    <div class="mt-6 flex justify-end gap-2">
+      <button
+        type="button"
+        class="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        [disabled]="busy()"
+        (click)="cancelled.emit()"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+        [disabled]="busy()"
+        (click)="confirmed.emit()"
+      >
+        {{ busy() ? 'Deleting…' : 'Delete permanently' }}
+      </button>
+    </div>
+  </div>
+</div>

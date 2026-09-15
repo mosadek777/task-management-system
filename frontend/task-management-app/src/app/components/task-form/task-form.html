@@ -1,0 +1,143 @@
+<div class="mx-auto max-w-2xl">
+  <div class="mb-4 flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-slate-900">
+      {{ isEditMode() ? 'Edit task' : 'New task' }}
+    </h1>
+    <a routerLink="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to list</a>
+  </div>
+
+  @if (loading()) {
+    <div class="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+      Loading task…
+    </div>
+  } @else if (loadError()) {
+    <!-- AC-10.8: a task that no longer exists says so, on a usable screen -->
+    <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-8 text-center">
+      <p class="text-sm font-medium text-red-800">{{ loadError() }}</p>
+      <a
+        routerLink="/"
+        class="mt-4 inline-block rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+      >
+        Back to your tasks
+      </a>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+      @if (serverError()) {
+        <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {{ serverError() }}
+        </div>
+      }
+
+      <!-- Title -->
+      <div>
+        <label for="title" class="block text-sm font-medium text-slate-700">
+          Title <span class="text-red-600">*</span>
+        </label>
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          (input)="clearServerError('title')"
+          maxlength="250"
+          class="mt-1 w-full rounded border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+          [class]="
+            errorFor('title')
+              ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
+              : 'border-slate-300 focus:border-slate-500 focus:ring-slate-500'
+          "
+        />
+        <!-- AC-09.10: the message sits next to its field, not only in a summary -->
+        @if (errorFor('title')) {
+          <p class="mt-1 text-sm text-red-700">{{ errorFor('title') }}</p>
+        } @else {
+          <p class="mt-1 text-xs text-slate-500">{{ form.controls.title.value.length }} / 200</p>
+        }
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="description" class="block text-sm font-medium text-slate-700">Description</label>
+        <textarea
+          id="description"
+          rows="4"
+          formControlName="description"
+          (input)="clearServerError('description')"
+          class="mt-1 w-full rounded border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+          [class]="
+            errorFor('description')
+              ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
+              : 'border-slate-300 focus:border-slate-500 focus:ring-slate-500'
+          "
+        ></textarea>
+        @if (errorFor('description')) {
+          <p class="mt-1 text-sm text-red-700">{{ errorFor('description') }}</p>
+        } @else {
+          <p class="mt-1 text-xs text-slate-500">
+            Optional · {{ form.controls.description.value.length }} / 1000
+          </p>
+        }
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
+        <!-- Priority: fixed options, so an invalid value cannot be typed (AC-09.2) -->
+        <div>
+          <label for="priority" class="block text-sm font-medium text-slate-700">Priority</label>
+          <select
+            id="priority"
+            formControlName="priority"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+          >
+            @for (p of priorities; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label for="status" class="block text-sm font-medium text-slate-700">Status</label>
+          <select
+            id="status"
+            formControlName="status"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+          >
+            @for (s of statuses; track s) {
+              <option [value]="s">{{ statusLabels[s] }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Due date: no min attribute — past dates are valid (AC-09.12) -->
+        <div>
+          <label for="dueDate" class="block text-sm font-medium text-slate-700">Due date</label>
+          <input
+            id="dueDate"
+            type="date"
+            formControlName="dueDate"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
+          />
+          <p class="mt-1 text-xs text-slate-500">Optional</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-slate-200 pt-4">
+        <!-- AC-10.6: cancel changes nothing -->
+        <a
+          routerLink="/"
+          class="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Cancel
+        </a>
+        <!-- AC-09.6: disabled while in flight, so one click cannot create two tasks -->
+        <button
+          type="submit"
+          [disabled]="saving()"
+          class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+        >
+          {{ saving() ? 'Saving…' : isEditMode() ? 'Save changes' : 'Create task' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

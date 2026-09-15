@@ -51,6 +51,45 @@ operations over `node_modules`, `bin` or `obj`.
 
 **Scale/Scope**: One user, tens of tasks, 5 endpoints, 1 entity, ~6 Angular components.
 
+### 2.1 Ports — authoritative record
+
+**The API's http port is `5178`. The Angular dev server's port is `4200`.** These two numbers are
+different things and are the most easily confused pair in the project.
+
+| Port | Belongs to | Declared in | Must agree |
+|---|---|---|---|
+| **5178** | The **API**, http | `Properties\launchSettings.json` → both profiles' `applicationUrl` | ✅ |
+| **5178** | The **API**, http fallback | `appsettings.json` → `"Urls"` | ✅ |
+| **5178** | What Angular **calls** | `src\environments\environment.ts` → `apiBaseUrl` | ✅ |
+| 7047 | The API, https (https profile only) | `launchSettings.json` | not used by the client |
+| **4200** | The **Angular dev server** — the origin CORS permits | `appsettings.json` → `Cors:AngularOrigin`, consumed by `Program.cs` | ✅ |
+
+**Why 5178 and not something else.** It is the port the `dotnet new webapi` template generated, and
+therefore the port `dotnet run` uses with no arguments and the port Visual Studio, Rider and VS Code
+use on F5. Any other choice has to be re-asserted on every launch and will drift back.
+
+**Three anti-drift measures are in place:**
+
+1. `appsettings.json` sets `"Urls": "http://localhost:5178"`, so the API binds to 5178 even when
+   `launchSettings.json` is bypassed (`dotnet run --no-launch-profile`, or running the built DLL).
+   Precedence is `--urls` > launchSettings > appsettings `Urls`, and the two committed sources now
+   say the same thing.
+
+   **It lives in `appsettings.json`, not `appsettings.Development.json`, on purpose.** The repo's
+   `.gitignore` excludes `appsettings.Development.json`, so anything placed there never reaches the
+   repository and is lost on a fresh clone — which would silently remove this very safeguard. The
+   value is a local port binding and contains no secret, so the committed file is the right home.
+   Real secrets still belong in `dotnet user-secrets`, never in either file.
+2. `UseHttpsRedirection()` is **scoped to non-Development**. The `https` launch profile listens on
+   *both* 7047 and 5178; with redirection active, Angular's calls to 5178 would be 307'd to 7047 and
+   fail on the dev certificate and the origin change. Scoped off, the API answers on 5178 under
+   either profile.
+3. Every one of the four files above carries a comment pointing back at this section.
+
+**Do not pass `--urls` on the command line.** Doing so overrides both committed sources and
+reintroduces exactly the mismatch this section exists to prevent — which is how port `5199` briefly
+appeared in `environment.ts` during implementation.
+
 ---
 
 ## 3. Constitution Check
@@ -636,7 +675,10 @@ dotnet ef database update
 dotnet run
 ```
 
-Then open the Swagger UI at the address `dotnet run` prints, and work through
+This serves the API on **http://localhost:5178** (§2.1). Do not add `--urls` — it overrides the
+committed configuration and desynchronises the Angular client.
+
+Then open the Swagger UI at http://localhost:5178/swagger and work through
 [contracts/tasks-api.md](./contracts/tasks-api.md) endpoint by endpoint.
 
 **Frontend** (a second PowerShell window)
